@@ -56,40 +56,36 @@ module vlib_uc_xbar_arbiter
     );
 
     logic [OUT_CNT-1:0] [IN_CNT-1:0]  req_vec_to_arb;
-    
-    logic [OUT_CNT-1:0] [IN_CNT-1:0]  rr_state, nxt_rr_state;
-
+    logic [OUT_CNT-1:0] [IN_CNT-1:0]  rr_state_vec, nxt_rr_state_vec;
     logic [OUT_CNT-1:0] [IN_CNT-1:0]  grt_vec_by_arb;
     
     //================== BODY ==================
-
-genvar ii,jj;    
-
     //------------ output rr_arbiter
 generate
-    for (jj=0; jj<OUT_CNT; jj=jj+1) begin: arb_jj
+    for (genvar jj=0; jj<OUT_CNT; jj++) begin: arb_jj
 
         // req_vec_to_arb of each arbiter
-        for (ii=0; ii<IN_CNT; ii=ii+1) begin: req_vec_jj_ii
+        for (genvar ii=0; ii<IN_CNT; ii++) begin: req_vec_jj_ii
             assign req_vec_to_arb[jj][ii] = req_vec[ii][jj];
         end
         
-        // update grt_vec_by_arb based on req_vec_to_arb and rr_state
-        assign grt_vec_by_arb[jj] = (arb_ready[jj]) ? grt_vec_func(rr_state[jj], req_vec_to_arb[jj]) : 
-                                    {IN_CNT{1'b0}};
+        // update grt_vec_by_arb based on req_vec_to_arb and rr_state_vec
+        assign grt_vec_by_arb[jj] = (arb_ready[jj]) ? grt_vec_func(.state_vec(rr_state_vec[jj]), 
+                                                                   .req_vec(req_vec_to_arb[jj])) : 
+                                    '0;
     
-        // update nxt_rr_state based on grt_vec_by_arb
-        // rr_state is a round-robin vector that gives the first priority to its first left request bit    
-        assign nxt_rr_state[jj] = (|grt_vec_by_arb[jj]) ? grt_vec_by_arb[jj] : 
-                                  rr_state[jj];
+        // update nxt_rr_state_vec based on grt_vec_by_arb
+        // rr_state_vec is a round-robin vector that gives the first priority to its first left request bit    
+        assign nxt_rr_state_vec[jj] = (|grt_vec_by_arb[jj]) ? grt_vec_by_arb[jj] : 
+                                  rr_state_vec[jj];
                                   
-        // update rr_state
+        // update rr_state_vec
         always @(posedge clk) begin
             if (rst) begin
-                rr_state[jj] <= {1'b1,{(IN_CNT-1){1'b0}}};    // initial priority is given to req[0]
+                rr_state_vec[jj] <= {1'b1,{(IN_CNT-1){1'b0}}};    // initial priority is given to req[0]
             end
             else begin
-                rr_state[jj] <= nxt_rr_state[jj];
+                rr_state_vec[jj] <= nxt_rr_state_vec[jj];
             end
         end
     end
@@ -99,8 +95,8 @@ endgenerate
     logic [IN_CNT-1:0] [OUT_CNT-1:0] grt_vec ;
     
 generate
-    for (ii=0; ii<IN_CNT; ii=ii+1) begin: grt_vec_ii
-        for (jj=0; jj<OUT_CNT; jj=jj+1) begin: grt_vec_ii_jj
+    for (genvar ii=0; ii<IN_CNT; ii++) begin: grt_vec_ii
+        for (genvar jj=0; jj<OUT_CNT; jj++) begin: grt_vec_ii_jj
             assign grt_vec[ii][jj] = grt_vec_by_arb[jj][ii];
         end
         
@@ -110,9 +106,9 @@ endgenerate
 
     //--------- arb_grt_id for each output port of the Xbar
 generate
-    for (jj=0; jj<OUT_CNT; jj=jj+1) begin: arb_grt_id_jj
+    for (genvar jj=0; jj<OUT_CNT; jj++) begin: arb_grt_id_jj
         assign arb_grt_vld[jj] = |grt_vec_by_arb[jj];
-        assign arb_grt_id[jj] = onehot_to_id_func(grt_vec_by_arb[jj]);
+        assign arb_grt_id[jj] = onehot_to_id_func(.bit_vec(grt_vec_by_arb[jj]));
     end
 endgenerate    
 
@@ -120,16 +116,16 @@ endgenerate
     //============== strict-priority granting function
     // (based on the sd_rrmux module in the sdlib library developed by Guy Hutchison)
     function automatic [IN_CNT-1:0] grt_vec_func;
-        input [IN_CNT-1:0] state;
+        input [IN_CNT-1:0] state_vec;
         input [IN_CNT-1:0] req_vec;
         
         reg [IN_CNT-1:0] msk_req;
         reg [IN_CNT-1:0] tmp_grant;
         begin
-            msk_req = req_vec & ~((state - 1'b1) | state);
+            msk_req = req_vec & ~((state_vec - 1'b1) | state_vec);
             tmp_grant = msk_req & (~msk_req + 1'b1);
 
-            if (msk_req != {IN_CNT{1'b0}})
+            if (|msk_req)
                 grt_vec_func = tmp_grant;
             else
                 grt_vec_func = req_vec & (~req_vec + 1'b1);
@@ -142,12 +138,10 @@ endgenerate
         
         logic [IN_ID_SZ:0] bit_one_cnt_func_tmp;
         
-        integer i;
-        
         begin
-            bit_one_cnt_func_tmp = {(IN_ID_SZ+1){1'b0}};
-            for (i=0; i<IN_CNT; i++) begin
-                bit_one_cnt_func_tmp = bit_one_cnt_func_tmp + bit_vec[i];
+            bit_one_cnt_func_tmp = '0;
+            for (int ii=0; ii<IN_CNT; ii++) begin
+                bit_one_cnt_func_tmp = bit_one_cnt_func_tmp + bit_vec[ii];
             end
             
             bit_one_cnt_func = bit_one_cnt_func_tmp;
@@ -158,13 +152,12 @@ endgenerate
     function automatic [IN_ID_SZ-1:0] onehot_to_id_func;
         input [IN_CNT-1:0] bit_vec;
         
-        logic [IN_CNT-1:0] mask, not_mask;
+        logic [IN_CNT-1:0] msk;
         
         begin
-            mask = ~bit_vec + 1'b1;
-            not_mask = ~mask;
+            msk = ~bit_vec + 1'b1;
             
-            onehot_to_id_func = bit_one_cnt_func(not_mask); 
+            onehot_to_id_func = bit_one_cnt_func(.bit_vec(~msk)); 
         end
         
     endfunction

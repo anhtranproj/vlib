@@ -57,11 +57,8 @@ module vlib_wrr_arbiter
     );
     
     logic [REQ_CNT-1:0] [WEIGHT_WD-1:0]    weight, nxt_weight, nxt_weight_tmp;
-    
     logic [REQ_CNT-1:0]        req_vec_chk;  
-    
-    logic [REQ_CNT-1:0]        req_vec_mask, req_vec_mask_tmp; // which requests have non-zero weight
-    
+    logic [REQ_CNT-1:0]        req_vec_msk, req_vec_msk_tmp; // which requests have non-zero weight
     logic [REQ_CNT-1:0]        state_vec, nxt_state_vec;
     
     //================== BODY ========================
@@ -84,16 +81,16 @@ module vlib_wrr_arbiter
         end
     endgenerate
     
-    //----------- update req_vec_mask
+    //----------- update req_vec_msk
     generate
-        for(genvar ii=0; ii<REQ_CNT; ii++) begin: req_vec_mask_update
-            assign req_vec_mask_tmp[ii] = (req_vec[ii] & |weight[ii]);
+        for(genvar ii=0; ii<REQ_CNT; ii++) begin: req_vec_msk_update
+            assign req_vec_msk_tmp[ii] = (req_vec[ii] & |weight[ii]);
         end
     endgenerate
     
     // if weight==0 but there are requests, then one of those requests could get granted
-    assign req_vec_mask = (~|req_vec_mask_tmp & |req_vec) ? req_vec : 
-                          req_vec_mask_tmp;
+    assign req_vec_msk = (~|req_vec_msk_tmp & |req_vec) ? req_vec : 
+                          req_vec_msk_tmp;
     
     //---------- update state_vec
     assign nxt_state_vec = ((|grt_vec) ? grt_vec : state_vec);
@@ -108,8 +105,7 @@ module vlib_wrr_arbiter
     end
     
     //---------- update grt_vec
-    assign grt_vec = (arb_ready) ? grt_vec_func(.state_vec(state_vec), .req_vec(req_vec_mask)) : 
-                     {REQ_CNT{1'b0}};
+    assign grt_vec = (arb_ready) ? grt_vec_func(.state_vec(state_vec), .req_vec(req_vec_msk)) : '0;
     
     //=================== FUNCTIONS ==============
     // (based on sd_rrmux module in the sdlib library developed by Guy Hutchison)
@@ -123,7 +119,7 @@ module vlib_wrr_arbiter
             msk_req = req_vec & ~((state_vec - 1'b1) | state_vec);
             grt_tmp = msk_req & (~msk_req + 1'b1);
 
-            if (msk_req != {REQ_CNT{1'b0}})
+            if (|msk_req)
                 grt_vec_func = grt_tmp;
             else
                 grt_vec_func = req_vec & (~req_vec + 1'b1);

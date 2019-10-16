@@ -65,8 +65,7 @@ module vlib_rr_arbiter
     end
 
     //----- update grt_vec based on req_vec and state_vec
-    assign grt_vec = (arb_ready) ? grt_vec_func(.state_vec(state_vec), .req_vec(req_vec)) : 
-                     {REQ_CNT{1'b0}};
+    assign grt_vec = (arb_ready) ? grt_vec_func(.state_vec(state_vec), .req_vec(req_vec)) : '0;
 
     assign grt_id = onehot_to_id_func(.bit_vec(grt_vec));
                      
@@ -86,7 +85,7 @@ module vlib_rr_arbiter
             msk_req = req_vec & ~((state_vec - 1'b1) | state_vec);
             grt_tmp = msk_req & (~msk_req + 1'b1);
 
-            if (msk_req != {REQ_CNT{1'b0}})
+            if (|msk_req)
                 grt_vec_func = grt_tmp;
             else
                 grt_vec_func = req_vec & (~req_vec + 1'b1);
@@ -99,12 +98,10 @@ module vlib_rr_arbiter
         
         logic [ID_SZ:0] bit_one_cnt_func_tmp;
         
-        integer i;
-        
         begin
-            bit_one_cnt_func_tmp = {(ID_SZ+1){1'b0}};
-            for (i=0; i<REQ_CNT; i++) begin
-                bit_one_cnt_func_tmp = bit_one_cnt_func_tmp + bit_vec[i];
+            bit_one_cnt_func_tmp = '0;
+            for (int ii=0; ii<REQ_CNT; ii++) begin
+                bit_one_cnt_func_tmp = bit_one_cnt_func_tmp + bit_vec[ii];
             end
             
             bit_one_cnt_func = bit_one_cnt_func_tmp;
@@ -115,13 +112,12 @@ module vlib_rr_arbiter
     function automatic [ID_SZ-1:0] onehot_to_id_func;
         input [REQ_CNT-1:0] bit_vec;
         
-        logic [REQ_CNT-1:0] mask, not_mask;
+        logic [REQ_CNT-1:0] msk;
         
         begin
-            mask = ~bit_vec + 1'b1;
-            not_mask = ~mask;
+            msk = ~bit_vec + 1'b1;
             
-            onehot_to_id_func = bit_one_cnt_func(not_mask);
+            onehot_to_id_func = bit_one_cnt_func(.bit_vec(~msk));
         end
         
     endfunction    
