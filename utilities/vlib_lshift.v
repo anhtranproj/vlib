@@ -35,27 +35,27 @@
 
 module vlib_lshift 
     #(parameter   WORD_WD = 8,                          // 1: bit, 8: byte, etc
-      parameter   WOR_CNT = 20,                         // the number of words of the shifted data
-      parameter   SHIFT_AMT_MAX = WOR_CNT,              // maximum value of shift_amt
+      parameter   WORD_CNT = 20,                         // the number of words of the shifted data
+      parameter   SHIFT_AMT_MAX = WORD_CNT,              // maximum value of shift_amt
       parameter   SHIFT_STG_CNT = $clog2(SHIFT_AMT_MAX) // the number of mux stages in the barrel shifter
     )
     (
-    input [WOR_CNT*WORD_WD-1:0]     in_data,
+    input [WORD_CNT*WORD_WD-1:0]     in_data,
     input [SHIFT_STG_CNT-1:0]       shift_amt,   // how many words would be shifted (< SHIFT_AMT_MAX)
     
-    output [WOR_CNT*WORD_WD-1:0]    out_data
+    output [WORD_CNT*WORD_WD-1:0]    out_data
     
     );
     
     //================== BODY ========================
-    logic [SHIFT_STG_CNT-1:0] [WOR_CNT*WORD_WD-1:0]     shift_stg;
+    logic [SHIFT_STG_CNT-1:0] [WORD_CNT*WORD_WD-1:0]     shift_stg;
     
-    assign shift_stg[0] = (shift_amt[0]) ? {in_data[(WOR_CNT-1)*WORD_WD-1:0], {WORD_WD{1'b0}}} :
+    assign shift_stg[0] = (shift_amt[0]) ? {in_data[(WORD_CNT-1)*WORD_WD-1:0], {WORD_WD{1'b0}}} :
                           in_data;
 
 generate
     for (genvar ii=1; ii<SHIFT_STG_CNT; ii++) begin: stage_ii
-        assign shift_stg[ii] = (shift_amt[ii]) ? {shift_stg[ii-1][(WOR_CNT-(1<<ii))*WORD_WD-1:0], {((1<<ii)*WORD_WD){1'b0}}} :
+        assign shift_stg[ii] = (shift_amt[ii]) ? {shift_stg[ii-1][(WORD_CNT-(1<<ii))*WORD_WD-1:0], {((1<<ii)*WORD_WD){1'b0}}} :
                                shift_stg[ii-1];
     end
 endgenerate
