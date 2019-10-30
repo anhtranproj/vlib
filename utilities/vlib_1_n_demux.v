@@ -70,7 +70,6 @@ endgenerate
     
 `else    
 generate
-//     logic [IDX_SZ-1:0] [2**(IDX_SZ-1)-1:0] [WORD_SZ-1:0]   lvl_data;
     logic [IDX_SZ-1:0] [2**(IDX_SZ-1)-1:0]                 lvl_vld;
 
 if (OUT_WORD_CNT == 1) begin: out_cnt_1
@@ -93,7 +92,6 @@ else if (OUT_WORD_CNT == 2) begin: out_cnt_2
 end
 
 else begin: out_cnt_greater_2
-//     assign lvl_data[0][0] = in_data;
     assign lvl_vld[0][0] = 1'b1;
 
     for (genvar ii=1; ii<IDX_SZ; ii++) begin: lvl_ii
@@ -104,8 +102,6 @@ else begin: out_cnt_greater_2
             else begin: jj_odd
                 assign lvl_vld[ii][jj] = ~in_output_idx[IDX_SZ-ii] ? lvl_vld[ii-1][jj/2] : 1'b0;
             end
-
-//             assign lvl_data[ii][jj] = lvl_data[ii-1][jj/2];
         end
     end
 
@@ -117,7 +113,6 @@ else begin: out_cnt_greater_2
             assign out_vldmask[jj] = ~in_output_idx[0] ? lvl_vld[IDX_SZ-1][jj/2] : 1'b0;
         end
 
-//         assign out_data[jj] = out_vldmask[jj] ? lvl_data[IDX_SZ-1][jj/2] : {WORD_SZ{1'b0}};
     end
   if (INVALID_OUT_DATA_TO_ZERO==1) begin
     always @* begin
