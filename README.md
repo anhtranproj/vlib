@@ -1,4 +1,6 @@
-VLIB is an open-sourced Verilog library developed and maintained by Anh Tran (Andrew).
+## VLIB
+
+VLIB is an open-sourced Verilog library developed by Anh Tran (Andrew).
 
 The library contains common Verilog components which can be used in different RTL blocks.
 
