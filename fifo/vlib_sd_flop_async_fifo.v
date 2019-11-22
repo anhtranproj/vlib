@@ -128,7 +128,7 @@ endgenerate
     
     assign rclk_wr_ptr = grey2bin(.grey_in(rclk_grey_wr_ptr));
     
-    //--------- transfer wr_ptr to wr_clk domain
+    //--------- transfer rd_ptr to wr_clk domain
     logic [ADR_SZ:0]     grey_rd_ptr, wclk_grey_rd_ptr, wclk_rd_ptr;    
     
     assign grey_rd_ptr = bin2grey(.bwr_in(rd_ptr));
@@ -200,7 +200,7 @@ endgenerate
     
     
     //========== FUNCTIONS
-    //----- copy bin2grey and grey2bin from SDLIB
+    //----- copy bin2grey and grey2bin functions from SDLIB
   function [ADR_SZ:0] bin2grey;
     input [ADR_SZ:0] bwr_in;
     begin
