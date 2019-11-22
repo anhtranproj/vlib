@@ -1,7 +1,7 @@
 //----------------------------------------------------------------------
 // A Srdy/Drdy pipeline cell
 //----------------------------------------------------------------------
-// Author: Anh Tran (Tran)
+// Author: Anh Tran (Andrew)
 //
 // This is free and unencumbered software released into the public domain.
 //
