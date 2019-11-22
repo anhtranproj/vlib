@@ -100,14 +100,13 @@ module vlib_sd_flop_async_fifo
     end
     
     //--------- write to and read from the flop array
-generate
-  for(genvar ii=0; ii<DEPTH; ii=ii+1) begin: gen_ARRY_ii
     always @(posedge wr_clk) begin
-        if ((wr_ptr[ADR_SZ-1:0] == ii[ADR_SZ-1:0]) & wr_en)
-            ARRY[ii] <= wr_data;
+        for(int ii=0; ii<DEPTH; ii++) begin
+            if ((wr_ptr[ADR_SZ-1:0] == ii[ADR_SZ-1:0]) & wr_en) begin
+                ARRY[ii] <= wr_data;
+            end
+        end
     end
-  end
-endgenerate
 
     assign rd_data_tmp = ARRY[rd_ptr[ADR_SZ-1:0]];
     
