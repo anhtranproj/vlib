@@ -1,9 +1,10 @@
 //----------------------------------------------------------------------
 // An asynchronous Srdy/Drdy flop-based fifo with power-of-2 DEPTH.
 //
-// NOTE: I'm able to make an async fifo with arbitrary depth,
-//       but I don't see a lot of use-cases for it; so I don't write it.
-//       Please contact me if you're interested in using it.
+// NOTE: async fifo is mostly used to transfer data crossing clock domains,
+//       so a shadow fifo with power-of-2 depth is normally used.
+//       If you see the need of using an async fifo with non-power-of-2 depth,
+//       please let me know.
 //----------------------------------------------------------------------
 // Author: Anh Tran (Andrew)
 //
