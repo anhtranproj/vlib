@@ -4,7 +4,7 @@
 // NOTE: async fifo is mostly used to transfer data crossing clock domains,
 //       so a shadow fifo with power-of-2 depth is normally used.
 //       If you see the need of using an async fifo with non-power-of-2 depth,
-//       please let me know.
+//       please let me know, I will make one.
 //----------------------------------------------------------------------
 // Author: Anh Tran (Andrew)
 //
@@ -199,8 +199,8 @@ generate
 endgenerate
     
     
-    //========== FUNCTIONS
-    //----- copy bin2grey and grey2bin functions from SDLIB
+  //========== FUNCTIONS
+  //----- copy bin2grey and grey2bin functions from SDLIB
   function [ADR_SZ:0] bin2grey;
     input [ADR_SZ:0] bwr_in;
     begin
