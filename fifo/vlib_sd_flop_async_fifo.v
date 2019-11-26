@@ -40,7 +40,7 @@
 module vlib_sd_flop_async_fifo 
     #(parameter WIDTH = 32,
       parameter DEPTH = 8,
-      parameter OUT_REG = 0,
+      parameter RD_OUT_REG = 0,
       parameter ADR_SZ = $clog2(DEPTH)
     )
     (
@@ -173,12 +173,12 @@ module vlib_sd_flop_async_fifo
     
     //----------- output pipeline option
 generate
-  if (OUT_REG == 0) begin: GEN_OUT_REG_0
+  if (RD_OUT_REG == 0) begin: GEN_RD_OUT_REG_0
     assign rd_srdy = rd_srdy_tmp;
     assign rd_drdy_tmp = rd_drdy;
     assign rd_data = rd_data_tmp;
   end
-  else begin: GEN_OUT_REG_1
+  else begin: GEN_RD_OUT_REG_1
     always @(posedge rd_clk) begin
         if (rd_rst) begin
             rd_srdy <= 1'b0;
