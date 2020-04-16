@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------
-// Serialize a multi-word data input to single-word data output.
+// Upsize/deserialize a sequence of single-word input data to a multi-word output data.
 //----------------------------------------------------------------------
 // Author: Anh Tran (Andrew)
 //
@@ -29,10 +29,10 @@
 // For more information, please refer to <http://unlicense.org/> 
 //----------------------------------------------------------------------
 
-`ifndef __VLIB_PARALLELIZE_V__
-`define __VLIB_PARALLELIZE_V__
+`ifndef __VLIB_DTWD_UPSIZE_V__
+`define __VLIB_DTWD_UPSIZE_V__
 
-module vlib_parallelize 
+module vlib_dtwd_upsize 
     #(parameter   WORD_WD = 8,          // 1: bit, 8: byte, etc
       parameter   OUT_WORD_CNT = 20,    // the number of output words for parallelizing
       parameter   OUT_PPLN_OPT = 0      // 0: not pipelined; 1: sd_input; 2: sd_output; 3: sd_iofull
@@ -58,14 +58,14 @@ module vlib_parallelize
     logic                                   out_drdy_tmp;
     logic [OUT_WORD_CNT-1:0] [WORD_WD-1:0]  out_data_tmp;    
     
-    //-------- parallelize
+    //-------- upsize
 generate    
   if (OUT_WORD_CNT == 1) begin: gen_identical
     assign out_srdy_tmp = in_srdy;
     assign in_drdy = out_drdy_tmp;
     assign out_data_tmp = in_data;
   end
-  else begin: gen_parallelize  
+  else begin: gen_upsize  
     logic [OUT_WORD_IDX_SZ-1:0]  word_idx, nxt_word_idx;
     
     assign nxt_word_idx = (out_srdy_tmp & out_drdy_tmp) ? '0 :
@@ -126,4 +126,4 @@ endgenerate
     );
     
 endmodule
-`endif // __VLIB_PARALLELIZE_V__
+`endif // __VLIB_DTWD_UPSIZE_V__

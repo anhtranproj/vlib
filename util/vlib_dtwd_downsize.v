@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------
-// Serialize a multi-word data input to single-word data output.
+// Downsize/serialize a multi-word input data to a sequence of single-word output data.
 //----------------------------------------------------------------------
 // Author: Anh Tran (Andrew)
 //
@@ -29,10 +29,10 @@
 // For more information, please refer to <http://unlicense.org/> 
 //----------------------------------------------------------------------
 
-`ifndef __VLIB_SERIALIZE_V__
-`define __VLIB_SERIALIZE_V__
+`ifndef __VLIB_DTWD_DOWNSIZE_V__
+`define __VLIB_DTWD_DOWNSIZE_V__
 
-module vlib_serialize 
+module vlib_dtwd_downsize 
     #(parameter   WORD_WD = 8,      // 1: bit, 8: byte, etc
       parameter   IN_WORD_CNT = 20, // the number of input words for serializing
       parameter   OUT_PPLN_OPT = 0  // 0: not pipelined; 1: sd_input; 2: sd_output; 3: sd_iofull
@@ -69,14 +69,14 @@ module vlib_serialize
     
     logic [IN_WORD_CNT-1:0] [WORD_WD-1:0]  in_data_reg;
     
-    //-------- serialize
+    //-------- downsize
 generate    
   if (IN_WORD_CNT == 1) begin: gen_identical
     assign out_srdy_tmp = in_srdy;
     assign in_drdy = out_drdy_tmp;
     assign out_data_tmp = in_data;
   end
-  else begin: gen_serialize
+  else begin: gen_downsize
     always @(posedge clk) begin
         if (in_srdy & in_drdy) begin
             in_data_reg <= in_data;
@@ -154,4 +154,4 @@ endgenerate
     );
     
 endmodule
-`endif // __VLIB_SERIALIZE_V__
+`endif // __VLIB_DTWD_DOWNSIZE_V__

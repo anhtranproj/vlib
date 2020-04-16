@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------
-// A Serialize/Deserialize with s/drdy flowcontrol.
+// A data width resizer with s/drdy flowcontrol.
 //----------------------------------------------------------------------
 // Author: Anh Tran (Andrew)
 //
@@ -29,10 +29,10 @@
 // For more information, please refer to <http://unlicense.org/> 
 //----------------------------------------------------------------------
 
-`ifndef __VLIB_SERDES_V__
-`define __VLIB_SERDES_V__
+`ifndef __VLIB_DTWD_RESIZE_V__
+`define __VLIB_DTWD_RESIZE_V__
 
-module vlib_serdes 
+module vlb_dtwd_resize 
     #(parameter   IN_DATA_WD = 20,  // must be multiple or divided by OUT_DATA_WD
       parameter   OUT_DATA_WD = 4,  // must be multiple or divided by IN_DATA_WD
       parameter   OUT_PPLN_OPT = 0  // 0: not pipelined; 1: sd_input; 2: sd_output; 3: sd_iofull
@@ -52,13 +52,13 @@ module vlib_serdes
     
     //================== BODY ========================
 generate    
-  if (IN_DATA_WD < OUT_DATA_WD) begin: GEN_PARALLELIZE
-    vlib_parallelize 
+  if (IN_DATA_WD < OUT_DATA_WD) begin: GEN_UPSIZE
+    vlb_dtwd_upsize 
     #(.WORD_WD      (IN_DATA_WD),               // 1: bit, 8: byte, etc
       .OUT_WORD_CNT (OUT_DATA_WD/IN_DATA_WD),   // the number of output words for oarallelizing
       .OUT_PPLN_OPT (OUT_PPLN_OPT)              // 0: not pipelined; 1: sd_input; 2: sd_output; 3: sd_iofull
     )
-    parallelize_ins
+    upsize_ins
     (
     .clk    (clk),
     .rst    (rst),
@@ -72,13 +72,13 @@ generate
     .out_data   (out_data)
     );
   end
-  else begin: GEN_SERIALIZE
-    vlib_serialize 
+  else begin: GEN_DOWNSIZE
+    vlib_dtwd_downsize 
     #(.WORD_WD      (OUT_DATA_WD),              // 1: bit, 8: byte, etc
       .IN_WORD_CNT  (IN_DATA_WD/OUT_DATA_WD),   // the number of input words for serializing
       .OUT_PPLN_OPT (OUT_PPLN_OPT)              // 0: not pipelined; 1: sd_input; 2: sd_output; 3: sd_iofull
     )
-    serialize_ins
+    downsize_ins
     (
     .clk    (clk),
     .rst    (rst),
@@ -95,4 +95,4 @@ generate
 endgenerate
     
 endmodule
-`endif // __VLIB_SERDES_V__
+`endif // __VLIB_DTWD_RESIZE_V__
