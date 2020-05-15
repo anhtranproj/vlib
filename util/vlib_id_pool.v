@@ -50,13 +50,12 @@ module vlib_id_pool
     output                    pool_full,
     input [ID_WD-1:0]         pushing_id,    
     
-    
     output logic [ADR_SZ:0]   avai_cnt     // how many available IDs in the pool
     );
     
     localparam POOL_DEPTH_SUB_1 = POOL_DEPTH-1;
     
-    logic [POOL_DEPTH-1:0] [ID_WD-1:0]   ARRY;   // array of flops
+    logic [POOL_DEPTH-1:0] [ID_WD-1:0]   ARRY;   // array IDs built on flops
     
     //---------- wr_en and rd_en
     logic   empty, full;
@@ -71,7 +70,7 @@ module vlib_id_pool
     
     always @(posedge clk) begin
         if (rst) begin
-            wr_c <= 1'b1;
+            wr_c <= 1'b1;   // the Pool is initialized with full of IDs
             wr_adr <= {ADR_SZ{1'b0}};
         end    
         else if (wr_en) begin
