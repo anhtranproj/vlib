@@ -29,14 +29,16 @@
 // For more information, please refer to <http://unlicense.org/> 
 //----------------------------------------------------------------------
 
-`ifndef __VLIB_DFC2SD_CONVERT_V__
-`define __VLIB_DFC2SD_CONVERT_V__
+`ifndef __VLIB_DFC2SD_CVT_V__
+`define __VLIB_DFC2SD_CVT_V__
 
-module vlib_dfc2sd_convert
+module vlib_dfc2sd_cvt
     #(parameter WIDTH = 32,
       parameter LATENCY = 2,
       parameter THRESHOLD = 1,
-      parameter ASSERT_FC_N_IF_POP = 1
+      parameter ASSERT_FC_N_IF_POP = 1,
+      parameter FC_N_REG = 0,
+      parameter USE_SHREG_FIFO = 1
     )
     (
     input clk,
@@ -51,22 +53,47 @@ module vlib_dfc2sd_convert
     output [WIDTH-1:0]  out_data
     );
     
-    localparam DEPTH = LATENCY+THRESHOLD;
-    
-    logic   fifo_nearfull;
-    logic   fifo_empty;
+    localparam EFF_LATENCY = (FC_N_REG==0) ? LATENCY : (LATENCY+1);
+    localparam DEPTH = EFF_LATENCY+THRESHOLD;
     
 generate
-  if (LATENCY==0) begin: LATENCY_0
+  if (EFF_LATENCY==0) begin: EFF_LATENCY_0
     assign out_srdy = in_vld;
     assign in_fc_n = out_drdy;
     assign out_data = in_data;
   end
-  else begin: LATENCY_GREATER_0
+  else begin: EFF_LATENCY_GREATER_0
+    logic   fifo_nearfull;
+    logic   fifo_empty;
+      
+   if (USE_SHREG_FIFO) begin: USE_REG_FIFO_YES
+    vlib_nft_shreg_fifo
+    #(.WIDTH                    (WIDTH),
+      .DEPTH                    (DEPTH),
+      .NFT_THRESHOLD            (EFF_LATENCY),
+      .DEASSERT_NEARFULL_IF_POP (ASSERT_FC_N_IF_POP)
+    )
+    nft_shreg_fifo_ins
+    (
+    .clk    (clk),
+    .rst    (rst),
+
+    .push       (in_vld),  
+    .nearfull   (fifo_nearfull),
+    .wdata      (in_data), // wdata will be written to the fifo if push & ~full   
+    
+    .empty      (fifo_empty),    
+    .pop        (out_drdy),
+    .rdata      (out_data),
+    
+    .usage      ()
+    );    
+   end
+   else begin: USE_SHREG_FIFO_NO
     vlib_nft_flop_fifo
     #(.WIDTH                    (WIDTH),
       .DEPTH                    (DEPTH),
-      .NFT_THRESHOLD            (LATENCY),
+      .NFT_THRESHOLD            (EFF_LATENCY),
       .DEASSERT_NEARFULL_IF_POP (ASSERT_FC_N_IF_POP)
     )
     nft_flop_fifo_ins
@@ -84,8 +111,20 @@ generate
     
     .usage      ()
     );
+   end 
+   
+    if (FC_N_REG == 0) begin
+        assign in_fc_n = ~fifo_nearfull;
+    end
+    else begin
+        always @(posedge clk) begin
+            if (rst)
+                in_fc_n <= 1'b1;
+            else
+                in_fc_n <= ~fifo_nearfull;
+        end
+    end
     
-    assign in_fc_n = ~fifo_nearfull;
     assign out_srdy = ~fifo_empty;
     
   end
@@ -93,4 +132,4 @@ endgenerate
     
     
 endmodule
-`endif  // __VLIB_DFC2SD_CONVERT_V__
+`endif  // __VLIB_DFC2SD_CVT_V__
