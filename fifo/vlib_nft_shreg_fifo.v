@@ -76,9 +76,8 @@ module vlib_nft_shreg_fifo
     
     assign tail_ptr = usage;
     
-generate
-  for(genvar ii=0; ii<DEPTH; ii++) begin
     always @(posedge clk) begin
+      for(int ii=0; ii<DEPTH; ii++) begin
         if (rd_en) begin
             if (wr_en & (tail_ptr[ADR_SZ-1:0] == ii[ADR_SZ-1:0])) begin
                 SHREG[ii] <= wdata;
@@ -87,9 +86,8 @@ generate
                 SHREG[ii] <= SHREG[ii+1]
             end
         end
+      end  
     end
-  end
-endgenerate
     
     //------ read data is always at reg[0]
     assign rdata = SHREG[0];
