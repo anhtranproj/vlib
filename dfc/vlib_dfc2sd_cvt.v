@@ -35,26 +35,27 @@
 module vlib_dfc2sd_cvt
     #(parameter WIDTH = 32,
       parameter LATENCY = 2,
-      parameter THRESHOLD = 1,
+      parameter FC_MARGIN = 1,  // a margin space before fc is triggered
       parameter ASSERT_FC_N_IF_POP = 1,
-      parameter FC_N_REG = 0,
-      parameter USE_SHREG_FIFO = 1
+      parameter VLD_REG = 0,    // whether in_vld signal is flopped first 
+      parameter FC_N_REG = 0,   // whetehr in_fc_n signal is flopped before sending out
+      parameter USE_SHREG_FIFO = 1  // use a shifted-register based fifo for data buffering
     )
     (
     input clk,
     input rst,
 
-    input               in_vld,  
-    output              in_fc_n,
-    input [WIDTH-1:0]   in_data, 
+    input                       in_vld,  
+    output logic                in_fc_n,
+    input [WIDTH-1:0]           in_data, 
     
-    output              out_srdy,    
-    input               out_drdy,
-    output [WIDTH-1:0]  out_data
+    output logic                out_srdy,    
+    input                       out_drdy,
+    output logic [WIDTH-1:0]    out_data
     );
     
-    localparam EFF_LATENCY = (FC_N_REG==0) ? LATENCY : (LATENCY+1);
-    localparam DEPTH = EFF_LATENCY+THRESHOLD;
+    localparam EFF_LATENCY = LATENCY + VLD_REG + FC_N_REG;
+    localparam DEPTH = EFF_LATENCY + FC_MARGIN;
     
 generate
   if (EFF_LATENCY==0) begin: EFF_LATENCY_0
@@ -63,6 +64,28 @@ generate
     assign out_data = in_data;
   end
   else begin: EFF_LATENCY_GREATER_0
+    logic                   in_vld_r;  
+    logic [WIDTH-1:0]       in_data_r;
+    
+   if (VLD_REG == 0) begin
+    assign in_vld_r = in_vld;
+    assign in_data_r = in_data;
+   end
+   else begin
+    always @(posedge clk) begin
+        if (rst) begin
+            in_vld_r <= 1'b0;
+        end
+        else begin
+            in_vld_r <= in_vld;
+        end
+        
+//         if (in_vld) begin
+            in_data_r <= in_data;
+//         end    
+    end
+   end
+    
     logic   fifo_nearfull;
     logic   fifo_empty;
       
@@ -78,9 +101,9 @@ generate
     .clk    (clk),
     .rst    (rst),
 
-    .push       (in_vld),  
+    .push       (in_vld_r),  
     .nearfull   (fifo_nearfull),
-    .wdata      (in_data), // wdata will be written to the fifo if push & ~full   
+    .wdata      (in_data_r), // wdata will be written to the fifo if push & ~full   
     
     .empty      (fifo_empty),    
     .pop        (out_drdy),
@@ -101,9 +124,9 @@ generate
     .clk    (clk),
     .rst    (rst),
 
-    .push       (in_vld),  
+    .push       (in_vld_r),  
     .nearfull   (fifo_nearfull),
-    .wdata      (in_data), // wdata will be written to the fifo if push & ~full   
+    .wdata      (in_data_r), // wdata will be written to the fifo if push & ~full   
     
     .empty      (fifo_empty),    
     .pop        (out_drdy),
