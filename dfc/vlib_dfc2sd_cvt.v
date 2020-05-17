@@ -35,11 +35,12 @@
 module vlib_dfc2sd_cvt
     #(parameter WIDTH = 32,
       parameter LATENCY = 2,
-      parameter FC_MARGIN = 1,  // a margin space before fc is triggered
+      parameter FC_MARGIN = 1,  // a margin buffering space before fc is asserted
       parameter ASSERT_FC_N_IF_POP = 1,
       parameter VLD_REG = 0,    // whether in_vld signal is flopped first 
       parameter FC_N_REG = 0,   // whetehr in_fc_n signal is flopped before sending out
-      parameter USE_SHREG_FIFO = 1  // use a shifted-register based fifo for data buffering
+      parameter USE_SHREG_FIFO = 1,  // use a shifted-register based fifo for data buffering
+      parameter AT_TOP = 0      // whether this converter is used at the top level
     )
     (
     input clk,
@@ -78,13 +79,22 @@ generate
         end
         else begin
             in_vld_r <= in_vld;
-        end
-        
-//         if (in_vld) begin
-            in_data_r <= in_data;
-//         end    
+        end        
     end
    end
+    
+  if (AT_TOP) begin
+    always @(posedge clk) begin
+        in_data_r <= in_data;
+    end
+  end
+  else begin
+    always @(posedge clk) begin
+      if (in_vld) begin
+        in_data_r <= in_data;
+      end  
+    end
+  end
     
     logic   fifo_nearfull;
     logic   fifo_empty;
