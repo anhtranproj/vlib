@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------
-// Convert a srdy/drdy input to delayed flow-control output.
+// Convert a srdy/drdy protocol to delayed flow-control protocol.
 //----------------------------------------------------------------------
 // Author: Andrew (Anh) Tran
 //
