@@ -40,20 +40,22 @@
 
 module vlib_wrr_arbiter 
     #(parameter REQ_CNT = 8,     // the number of requests
-      parameter WEIGHT_WD = 4    // the bit-width of weights
+      parameter WEIGHT_WD = 4,    // the bit-width of weights
+      parameter ID_SZ = $clog2(REQ_CNT)
     )
     (
     input clk,
     input rst,
         
-    //--------- I/O
-    input [REQ_CNT-1:0] [WEIGHT_WD-1:0]     init_weight,    // a vector of N initial weights
+    //----- config
+    input [REQ_CNT-1:0] [WEIGHT_WD-1:0]     cfg_weight,    // a vector of N initial weights
 
+    //----- I/Os
     input                                   arb_ready,  // whether the resource using this arbiter is ready; if ready=0 --> grt_vec=0 regardless of req_vec
     
     input [REQ_CNT-1:0]                     req_vec, // bit vector represents N requests
     output [REQ_CNT-1:0]                    grt_vec    // bit vector represents N grants; no more than 1 bit in this vector is '1'
-    
+    output [ID_SZ-1:0]                      grt_id
     );
     
     logic [REQ_CNT-1:0] [WEIGHT_WD-1:0]    weight, nxt_weight, nxt_weight_tmp;
@@ -62,19 +64,20 @@ module vlib_wrr_arbiter
     logic [REQ_CNT-1:0]        state_vec, nxt_state_vec;
     
     //================== BODY ========================
-    //----------- update weight
+    //----------- update weights
     generate
         for(genvar ii=0; ii<REQ_CNT; ii++) begin: weight_update
             assign nxt_weight_tmp[ii] = (grt_vec[ii] & |weight[ii]) ? (weight[ii]-1'b1) : 
                                         weight[ii];
+                                        
             assign req_vec_chk[ii] = req_vec[ii] & |nxt_weight_tmp[ii];
             
             assign nxt_weight[ii] = (|req_vec_chk) ? nxt_weight_tmp[ii] : 
-                                    init_weight[ii];
+                                    cfg_weight[ii];
                                     
             always @(posedge clk) begin
                 if (rst)
-                    weight[ii] <=  init_weight[ii];
+                    weight[ii] <=  cfg_weight[ii];
                 else
                     weight[ii] <=  nxt_weight[ii];
             end
@@ -104,11 +107,13 @@ module vlib_wrr_arbiter
         end
     end
     
-    //---------- update grt_vec
+    //---------- update grt_vec and grt_id
     assign grt_vec = (arb_ready) ? grt_vec_func(.state_vec(state_vec), .req_vec(req_vec_msk)) : '0;
     
+    assign grt_id = onehot_to_id_func(.bit_vec(grt_vec));
+    
     //=================== FUNCTIONS ==============
-    // (based on sd_rrmux module in the sdlib library developed by Guy Hutchison)
+    // (based on sd_rrmux module in the SDLIB library)
     function automatic [REQ_CNT-1:0] grt_vec_func;
         input [REQ_CNT-1:0] state_vec;
         input [REQ_CNT-1:0] req_vec;
@@ -125,6 +130,36 @@ module vlib_wrr_arbiter
                 grt_vec_func = req_vec & (~req_vec + 1'b1);
         end
     endfunction
+
+    //============= bit_one_cnt_func function 
+    function automatic [ID_SZ:0]  bit_one_cnt_func;
+        input [REQ_CNT-1:0] bit_vec;
+        
+        logic [ID_SZ:0] bit_one_cnt_func_tmp;
+        
+        begin
+            bit_one_cnt_func_tmp = '0;
+            for (int ii=0; ii<REQ_CNT; ii++) begin
+                bit_one_cnt_func_tmp = bit_one_cnt_func_tmp + bit_vec[ii];
+            end
+            
+            bit_one_cnt_func = bit_one_cnt_func_tmp;
+        end
+    endfunction
+    
+    //=========== convert from 1-hot bit-vector to an id
+    function automatic [ID_SZ-1:0] onehot_to_id_func;
+        input [REQ_CNT-1:0] bit_vec;
+        
+        logic [REQ_CNT-1:0] msk;
+        
+        begin
+            msk = ~bit_vec + 1'b1;
+            
+            onehot_to_id_func = bit_one_cnt_func(.bit_vec(~msk));
+        end
+        
+    endfunction   
     
 endmodule
 `endif // __VLIB_WRR_ARBITER_V__

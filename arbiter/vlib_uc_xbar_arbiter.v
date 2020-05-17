@@ -114,7 +114,7 @@ endgenerate
 
     //============= FUNCTIONS ====================
     //============== strict-priority granting function
-    // (based on the sd_rrmux module in the sdlib library developed by Guy Hutchison)
+    // (based on the sd_rrmux module in the SDLIB library)
     function automatic [IN_CNT-1:0] grt_vec_func;
         input [IN_CNT-1:0] state_vec;
         input [IN_CNT-1:0] req_vec;

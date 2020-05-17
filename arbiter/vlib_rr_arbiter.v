@@ -74,7 +74,7 @@ module vlib_rr_arbiter
     
     //=================== FUNCTIONS ==============
     //============== strict-priority granting function
-    // (based on sd_rrmux module in the sdlib library developed by Guy Hutchison)
+    // (based on sd_rrmux module in the SDLIB library)
     function automatic [REQ_CNT-1:0] grt_vec_func;
         input [REQ_CNT-1:0] state_vec;
         input [REQ_CNT-1:0] req_vec;
