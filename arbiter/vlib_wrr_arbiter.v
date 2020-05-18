@@ -1,11 +1,7 @@
 //------------------------------------------------------------------------------
 // Filename: vlib_wrr_arbiter.v
 //
-// A weighted round-robin arbiter:
-//  . each request is associated with an initial weight
-//  . the arbiter grants to the requests having non-zero weights in a round-robin manner
-//  . if a request gets granted, its weight is decremented by 1
-//  . the weights would be reset to the initial values if ~(req[i] & (weight[i]>0)) for all i
+// A weighted round-robin arbiter.
 //----------------------------------------------------------------------
 // Author: Anh Tran (Andrew)
 //
@@ -40,7 +36,7 @@
 
 module vlib_wrr_arbiter 
     #(parameter REQ_CNT = 8,     // the number of requests
-      parameter WEIGHT_WD = 4,    // the bit-width of weights
+      parameter WGT_SZ = 4,      // the bit-width of weights
       parameter ID_SZ = $clog2(REQ_CNT)
     )
     (
@@ -48,54 +44,53 @@ module vlib_wrr_arbiter
     input rst,
         
     //----- config
-    input [REQ_CNT-1:0] [WEIGHT_WD-1:0]     cfg_weight,    // a vector of N initial weights
+    input [REQ_CNT-1:0] [WGT_SZ-1:0]     cfg_wgt_vec,    // a vector of initial weights
 
     //----- I/Os
-    input                                   arb_ready,  // whether the resource using this arbiter is ready; if ready=0 --> grt_vec=0 regardless of req_vec
+    input                                   arb_ready,  // if ready=0, then grt_vec=0 regardless of req_vec
     
-    input [REQ_CNT-1:0]                     req_vec, // bit vector represents N requests
-    output [REQ_CNT-1:0]                    grt_vec    // bit vector represents N grants; no more than 1 bit in this vector is '1'
+    input [REQ_CNT-1:0]                     req_vec,    // bit vector represents input requests
+    output [REQ_CNT-1:0]                    grt_vec,    // bit vector represents output grants; at most 1 bit in this vector is '1'
     output [ID_SZ-1:0]                      grt_id
     );
     
-    logic [REQ_CNT-1:0] [WEIGHT_WD-1:0]    weight, nxt_weight, nxt_weight_tmp;
-    logic [REQ_CNT-1:0]        req_vec_chk;  
-    logic [REQ_CNT-1:0]        req_vec_msk, req_vec_msk_tmp; // which requests have non-zero weight
-    logic [REQ_CNT-1:0]        state_vec, nxt_state_vec;
-    
     //================== BODY ========================
     //----------- update weights
-    generate
-        for(genvar ii=0; ii<REQ_CNT; ii++) begin: weight_update
-            assign nxt_weight_tmp[ii] = (grt_vec[ii] & |weight[ii]) ? (weight[ii]-1'b1) : 
-                                        weight[ii];
+    logic [REQ_CNT-1:0] [WGT_SZ-1:0]    wgt_vec, nxt_wgt_vec, nxt_wgt_vec_tmp;
+    logic [REQ_CNT-1:0]                 req_vec_chk; 
+    
+generate
+    for(genvar ii=0; ii<REQ_CNT; ii++) begin
+        assign nxt_wgt_vec_tmp[ii] = (grt_vec[ii] & |wgt_vec[ii]) ? (wgt_vec[ii]-1'b1) : wgt_vec[ii];
                                         
-            assign req_vec_chk[ii] = req_vec[ii] & |nxt_weight_tmp[ii];
+        assign req_vec_chk[ii] = req_vec[ii] & |nxt_wgt_vec_tmp[ii];
             
-            assign nxt_weight[ii] = (|req_vec_chk) ? nxt_weight_tmp[ii] : 
-                                    cfg_weight[ii];
+        assign nxt_wgt_vec[ii] = (|req_vec_chk) ? nxt_wgt_vec_tmp[ii] : cfg_wgt_vec[ii];
                                     
-            always @(posedge clk) begin
-                if (rst)
-                    weight[ii] <=  cfg_weight[ii];
-                else
-                    weight[ii] <=  nxt_weight[ii];
-            end
+        always @(posedge clk) begin
+            if (rst)
+                wgt_vec[ii] <=  cfg_wgt_vec[ii];
+            else
+                wgt_vec[ii] <=  nxt_wgt_vec[ii];
         end
-    endgenerate
+    end
+endgenerate
     
     //----------- update req_vec_msk
-    generate
-        for(genvar ii=0; ii<REQ_CNT; ii++) begin: req_vec_msk_update
-            assign req_vec_msk_tmp[ii] = (req_vec[ii] & |weight[ii]);
-        end
-    endgenerate
+    logic [REQ_CNT-1:0]        req_vec_msk, req_vec_msk_tmp; // which requests have non-zero weight
+    
+generate
+    for(genvar ii=0; ii<REQ_CNT; ii++) begin
+        assign req_vec_msk_tmp[ii] = (req_vec[ii] & |wgt_vec[ii]);
+    end
+endgenerate
     
     // if weight==0 but there are requests, then one of those requests could get granted
     assign req_vec_msk = (~|req_vec_msk_tmp & |req_vec) ? req_vec : 
                           req_vec_msk_tmp;
     
     //---------- update state_vec
+    logic [REQ_CNT-1:0]        state_vec, nxt_state_vec;
     assign nxt_state_vec = ((|grt_vec) ? grt_vec : state_vec);
     
     always @(posedge clk) begin
