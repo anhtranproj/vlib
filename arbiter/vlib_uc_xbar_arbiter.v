@@ -34,13 +34,11 @@
 `ifndef __VLIB_UC_XBAR_ARBITER_V__
 `define __VLIB_UC_XBAR_ARBITER_V__
 
-module vlib_uc_xbar_arbiter 
-    #(parameter IN_CNT = 8,     // the number of Xbar's input ports
-      parameter OUT_CNT = 20,   // the number of Xbar's output ports
-      parameter IN_ID_SZ = $clog2(IN_CNT)   
-     )
-    (
-
+module vlib_uc_xbar_arbiter #(
+    parameter IN_CNT = 8,     // the number of Xbar's input ports
+    parameter OUT_CNT = 20,   // the number of Xbar's output ports
+    parameter IN_ID_SZ = $clog2(IN_CNT)   
+    )(
     input clk,
     input rst,
     
@@ -52,7 +50,6 @@ module vlib_uc_xbar_arbiter
 
     output  [OUT_CNT-1:0]                   arb_grt_vld,    // whether the arbiter grants to an input
     output  [OUT_CNT-1:0] [IN_ID_SZ-1:0]    arb_grt_id      // = mux_sel of each output port
-
     );
 
     logic [OUT_CNT-1:0] [IN_CNT-1:0]  req_vec_to_arb;

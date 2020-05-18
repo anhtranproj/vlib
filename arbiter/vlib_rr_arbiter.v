@@ -35,20 +35,20 @@
 `ifndef __VLIB_RR_ARBITER_V__
 `define __VLIB_RR_ARBITER_V__
 
-module vlib_rr_arbiter 
-    #(parameter REQ_CNT = 8,
-      parameter ID_SZ = $clog2(REQ_CNT) 
-    )
-    (
-
+module vlib_rr_arbiter #(
+    parameter REQ_CNT = 8,
+    parameter ID_SZ = $clog2(REQ_CNT) 
+    )(
     input   clk,
     input   rst,
     
-    input                  arb_ready, // if ready=0, then grt_vec=0 regardless of req_vec
+    input                  arb_ready,   // if ready=0, then grt_vec=0 regardless of req_vec
     
-    input [REQ_CNT-1:0]    req_vec,
-    output [REQ_CNT-1:0]   grt_vec,
-    output [ID_SZ-1:0]     grt_id
+    input [REQ_CNT-1:0]    req_vec,     // bit vector represents input requests
+    output [REQ_CNT-1:0]   grt_vec,     // bit vector represents output grants
+    
+    output                 grt_vld,     // whether there is a grant 
+    output [ID_SZ-1:0]     grt_id       // index of the granted request
     );
 
     //================== BODY ==================
@@ -67,6 +67,7 @@ module vlib_rr_arbiter
     //----- update grt_vec based on req_vec and state_vec
     assign grt_vec = (arb_ready) ? grt_vec_func(.state_vec(state_vec), .req_vec(req_vec)) : '0;
 
+    assign grt_vld = |grt_vec;
     assign grt_id = onehot_to_id_func(.bit_vec(grt_vec));
                      
     //----- compute nxt_state_vec based on grt_vec

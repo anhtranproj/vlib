@@ -34,12 +34,11 @@
 `ifndef __VLIB_WRR_ARBITER_V__
 `define __VLIB_WRR_ARBITER_V__
 
-module vlib_wrr_arbiter 
-    #(parameter REQ_CNT = 8,     // the number of requests
-      parameter WGT_SZ = 4,      // the bit-width of weights
-      parameter ID_SZ = $clog2(REQ_CNT)
-    )
-    (
+module vlib_wrr_arbiter #(
+    parameter REQ_CNT = 8,     // the number of requests
+    parameter WGT_SZ = 4,      // the bit-width of weights
+    parameter ID_SZ = $clog2(REQ_CNT)
+    )(
     input clk,
     input rst,
         
@@ -51,7 +50,9 @@ module vlib_wrr_arbiter
     
     input [REQ_CNT-1:0]         req_vec,    // bit vector represents input requests
     output [REQ_CNT-1:0]        grt_vec,    // bit vector represents output grants; at most 1 bit in this vector is '1'
-    output [ID_SZ-1:0]          grt_id
+    
+    output                      grt_vld,    // whether there is a grant 
+    output [ID_SZ-1:0]          grt_id      // index of the granted request
     );
     
     //================== BODY ========================
@@ -105,6 +106,7 @@ endgenerate
     //---------- update grt_vec and grt_id
     assign grt_vec = (arb_ready) ? grt_vec_func(.state_vec(state_vec), .req_vec(req_vec_msk)) : '0;
     
+    assign grt_vld = |grt_vec;
     assign grt_id = onehot_to_id_func(.bit_vec(grt_vec));
     
     //=================== FUNCTIONS ==============
