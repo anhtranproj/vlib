@@ -47,11 +47,11 @@ module vlib_wrr_arbiter
     input [REQ_CNT-1:0] [WGT_SZ-1:0]     cfg_wgt_vec,    // a vector of initial weights
 
     //----- I/Os
-    input                                   arb_ready,  // if ready=0, then grt_vec=0 regardless of req_vec
+    input                       arb_ready,  // if ready=0, then grt_vec=0 regardless of req_vec
     
-    input [REQ_CNT-1:0]                     req_vec,    // bit vector represents input requests
-    output [REQ_CNT-1:0]                    grt_vec,    // bit vector represents output grants; at most 1 bit in this vector is '1'
-    output [ID_SZ-1:0]                      grt_id
+    input [REQ_CNT-1:0]         req_vec,    // bit vector represents input requests
+    output [REQ_CNT-1:0]        grt_vec,    // bit vector represents output grants; at most 1 bit in this vector is '1'
+    output [ID_SZ-1:0]          grt_id
     );
     
     //================== BODY ========================
