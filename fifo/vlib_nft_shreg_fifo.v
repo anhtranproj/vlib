@@ -83,7 +83,7 @@ module vlib_nft_shreg_fifo
                 SHREG[ii] <= wdata;
             end
             else begin
-                SHREG[ii] <= SHREG[ii+1]
+                SHREG[ii] <= SHREG[ii+1];
             end
         end
       end  
@@ -124,7 +124,7 @@ endgenerate
     
     OVERFLOW_CHECK_A: assert property (@(posedge clk) disable iff (rst) 
                                        (~overflow))
-                                      else $fatal(1, "%t ERROR: push while the fifo is full");
+                                      else $fatal("%t ERROR: push while the fifo is full");
 
 endmodule
 `endif  // __VLIB_NFT_SHREG_FIFO_V__

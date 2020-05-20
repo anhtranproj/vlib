@@ -138,7 +138,7 @@ endgenerate
     
     OVERFLOW_CHECK_A: assert property (@(posedge clk) disable iff (rst) 
                                        (~overflow))
-                                      else $fatal(1, "%t ERROR: push while the fifo is full");
+                                      else $fatal("%t ERROR: push while the fifo is full");
 
 endmodule
 `endif  // __VLIB_NFT_FLOP_FIFO_V__
