@@ -67,7 +67,7 @@ generate
         end
         
         // update grt_vec_by_arb based on req_vec_to_arb and rr_state_vec
-        assign grt_vec_by_arb[jj] = (arb_ready[jj]) ? grt_vec_func(.state_vec(rr_state_vec[jj]), 
+        assign grt_vec_by_arb[jj] = (arb_ready[jj]) ? grt_vec_f(.state_vec(rr_state_vec[jj]), 
                                                                    .req_vec(req_vec_to_arb[jj])) : 
                                     '0;
     
@@ -105,14 +105,14 @@ endgenerate
 generate
     for (genvar jj=0; jj<OUT_CNT; jj++) begin: arb_grt_id_jj
         assign arb_grt_vld[jj] = |grt_vec_by_arb[jj];
-        assign arb_grt_id[jj] = onehot_to_id_func(.bit_vec(grt_vec_by_arb[jj]));
+        assign arb_grt_id[jj] = onehot_to_id_f(.bit_vec(grt_vec_by_arb[jj]));
     end
 endgenerate    
 
     //============= FUNCTIONS ====================
     //============== strict-priority granting function
     // (based on the sd_rrmux module in the SDLIB library)
-    function automatic [IN_CNT-1:0] grt_vec_func;
+    function automatic [IN_CNT-1:0] grt_vec_f;
         input [IN_CNT-1:0] state_vec;
         input [IN_CNT-1:0] req_vec;
         
@@ -123,32 +123,32 @@ endgenerate
             tmp_grant = msk_req & (~msk_req + 1'b1);
 
             if (|msk_req)
-                grt_vec_func = tmp_grant;
+                grt_vec_f = tmp_grant;
             else
-                grt_vec_func = req_vec & (~req_vec + 1'b1);
+                grt_vec_f = req_vec & (~req_vec + 1'b1);
         end
     endfunction
 
-    //============= bit_one_cnt_func function 
-    function automatic [IN_ID_SZ:0]  bit_one_cnt_func;
+    //============= bit_one_cnt_f function 
+    function automatic [IN_ID_SZ:0]  bit_one_cnt_f;
         input [IN_CNT-1:0] bit_vec;
         
-        logic [IN_ID_SZ:0] bit_one_cnt_func_tmp;
+        logic [IN_ID_SZ:0] out_tmp;
         
         begin
-            bit_one_cnt_func_tmp = '0;
+            out_tmp = '0;
             for (int ii=0; ii<IN_CNT; ii++) begin
 /* verilator lint_off WIDTH */            
-                bit_one_cnt_func_tmp = bit_one_cnt_func_tmp + bit_vec[ii];
+                out_tmp = out_tmp + bit_vec[ii];
 /* verilator lint_on WIDTH */                
             end
             
-            bit_one_cnt_func = bit_one_cnt_func_tmp;
+            bit_one_cnt_f = out_tmp;
         end
     endfunction
     
     //=========== convert from 1-hot bit-vector to an id
-    function automatic [IN_ID_SZ-1:0] onehot_to_id_func;
+    function automatic [IN_ID_SZ-1:0] onehot_to_id_f;
         input [IN_CNT-1:0] bit_vec;
         
         logic [IN_CNT-1:0] msk;
@@ -157,7 +157,7 @@ endgenerate
             msk = ~bit_vec + 1'b1;
             
 /* verilator lint_off WIDTH */            
-            onehot_to_id_func = bit_one_cnt_func(.bit_vec(~msk)); 
+            onehot_to_id_f = bit_one_cnt_f(.bit_vec(~msk)); 
 /* verilator lint_on WIDTH */            
         end
         

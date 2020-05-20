@@ -65,10 +65,10 @@ module vlib_rr_arbiter #(
     end
 
     //----- update grt_vec based on req_vec and state_vec
-    assign grt_vec = (arb_ready) ? grt_vec_func(.state_vec(state_vec), .req_vec(req_vec)) : '0;
+    assign grt_vec = (arb_ready) ? grt_vec_f(.state_vec(state_vec), .req_vec(req_vec)) : '0;
 
     assign grt_vld = |grt_vec;
-    assign grt_id = onehot_to_id_func(.bit_vec(grt_vec));
+    assign grt_id = onehot_to_id_f(.bit_vec(grt_vec));
                      
     //----- compute nxt_state_vec based on grt_vec
     assign nxt_state_vec = (|grt_vec) ? grt_vec : state_vec;
@@ -76,7 +76,7 @@ module vlib_rr_arbiter #(
     //=================== FUNCTIONS ==============
     //============== strict-priority granting function
     // (based on sd_rrmux module in the SDLIB library)
-    function automatic [REQ_CNT-1:0] grt_vec_func;
+    function automatic [REQ_CNT-1:0] grt_vec_f;
         input [REQ_CNT-1:0] state_vec;
         input [REQ_CNT-1:0] req_vec;
         
@@ -87,32 +87,32 @@ module vlib_rr_arbiter #(
             grt_tmp = msk_req & (~msk_req + 1'b1);
 
             if (|msk_req)
-                grt_vec_func = grt_tmp;
+                grt_vec_f = grt_tmp;
             else
-                grt_vec_func = req_vec & (~req_vec + 1'b1);
+                grt_vec_f = req_vec & (~req_vec + 1'b1);
         end
     endfunction
 
-    //============= bit_one_cnt_func function 
-    function automatic [ID_SZ:0]  bit_one_cnt_func;
+    //============= bit_one_cnt_f function 
+    function automatic [ID_SZ:0]  bit_one_cnt_f;
         input [REQ_CNT-1:0] bit_vec;
         
-        logic [ID_SZ:0] bit_one_cnt_func_tmp;
+        logic [ID_SZ:0] out_tmp;
         
         begin
-            bit_one_cnt_func_tmp = '0;
+            out_tmp = '0;
             for (int ii=0; ii<REQ_CNT; ii++) begin
 /* verilator lint_off WIDTH */
-                bit_one_cnt_func_tmp = bit_one_cnt_func_tmp + bit_vec[ii]; 
+                out_tmp = out_tmp + bit_vec[ii]; 
 /* verilator lint_on WIDTH */
             end
             
-            bit_one_cnt_func = bit_one_cnt_func_tmp;
+            bit_one_cnt_f = out_tmp;
         end
     endfunction
     
     //=========== convert from 1-hot bit-vector to an id
-    function automatic [ID_SZ-1:0] onehot_to_id_func;
+    function automatic [ID_SZ-1:0] onehot_to_id_f;
         input [REQ_CNT-1:0] bit_vec;
         
         logic [REQ_CNT-1:0] msk;
@@ -121,7 +121,7 @@ module vlib_rr_arbiter #(
             msk = ~bit_vec + 1'b1;
             
 /* verilator lint_off WIDTH */
-            onehot_to_id_func = bit_one_cnt_func(.bit_vec(~msk));
+            onehot_to_id_f = bit_one_cnt_f(.bit_vec(~msk));
 /* verilator lint_on WIDTH */
         end
         
