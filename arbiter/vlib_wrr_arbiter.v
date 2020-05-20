@@ -137,7 +137,9 @@ endgenerate
         begin
             bit_one_cnt_func_tmp = '0;
             for (int ii=0; ii<REQ_CNT; ii++) begin
+/* verilator lint_off WIDTH */
                 bit_one_cnt_func_tmp = bit_one_cnt_func_tmp + bit_vec[ii];
+/* verilator lint_on WIDTH */                
             end
             
             bit_one_cnt_func = bit_one_cnt_func_tmp;
@@ -152,8 +154,10 @@ endgenerate
         
         begin
             msk = ~bit_vec + 1'b1;
-            
+
+/* verilator lint_off WIDTH */            
             onehot_to_id_func = bit_one_cnt_func(.bit_vec(~msk));
+/* verilator lint_on WIDTH */            
         end
         
     endfunction   
