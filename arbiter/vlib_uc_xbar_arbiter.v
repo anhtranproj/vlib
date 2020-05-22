@@ -59,10 +59,10 @@ module vlib_uc_xbar_arbiter #(
     //================== BODY ==================
     //------------ output rr_arbiter
 generate
-    for (genvar jj=0; jj<OUT_CNT; jj++) begin: arb_jj
+    for (genvar jj=0; jj<OUT_CNT; jj++) begin
 
         // req_vec_to_arb of each arbiter
-        for (genvar ii=0; ii<IN_CNT; ii++) begin: req_vec_jj_ii
+        for (genvar ii=0; ii<IN_CNT; ii++) begin
             assign req_vec_to_arb[jj][ii] = req_vec[ii][jj];
         end
         
@@ -92,8 +92,8 @@ endgenerate
     logic [IN_CNT-1:0] [OUT_CNT-1:0] grt_vec ;
     
 generate
-    for (genvar ii=0; ii<IN_CNT; ii++) begin: grt_vec_ii
-        for (genvar jj=0; jj<OUT_CNT; jj++) begin: grt_vec_ii_jj
+    for (genvar ii=0; ii<IN_CNT; ii++) begin
+        for (genvar jj=0; jj<OUT_CNT; jj++) begin
             assign grt_vec[ii][jj] = grt_vec_by_arb[jj][ii];
         end
         
@@ -103,7 +103,7 @@ endgenerate
 
     //--------- arb_grt_id for each output port of the Xbar
 generate
-    for (genvar jj=0; jj<OUT_CNT; jj++) begin: arb_grt_id_jj
+    for (genvar jj=0; jj<OUT_CNT; jj++) begin
         assign arb_grt_vld[jj] = |grt_vec_by_arb[jj];
         assign arb_grt_id[jj] = onehot_to_id_f(.bit_vec(grt_vec_by_arb[jj]));
     end
