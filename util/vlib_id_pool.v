@@ -36,6 +36,7 @@
 module vlib_id_pool 
     #(parameter ID_WD = 32,
       parameter POOL_DEPTH = 8,
+      parameter INIT_FULL = 1,  // 1: initialize the pool with a full of ids; 0: clean the full at reset
       parameter ADR_SZ = $clog2(POOL_DEPTH)
     )
     (
@@ -46,8 +47,8 @@ module vlib_id_pool
     input                     pool_take,
     output logic [ID_WD-1:0]  taking_id,
     
-    input                     pool_push,  
     output                    pool_full,
+    input                     pool_push,  
     input [ID_WD-1:0]         pushing_id,    
     
     output logic [ADR_SZ:0]   avai_cnt     // how many available IDs in the pool
@@ -68,6 +69,8 @@ module vlib_id_pool
     logic                  wr_c, rd_c;       // used for full/empty check
     logic [ADR_SZ-1:0]     wr_adr, rd_adr;    
     
+generate     
+  if (INIT_FULL == 1) begin: POOL_INIT_FULL
     always @(posedge clk) begin
         if (rst) begin
             wr_c <= 1'b1;   // the Pool is initialized with full of IDs
@@ -83,6 +86,25 @@ module vlib_id_pool
             end
         end    
     end
+  end  
+  else begin: POOL_INIT_EMPTY
+    always @(posedge clk) begin
+        if (rst) begin
+            wr_c <= 1'b0;   // the Pool is initialized with empty
+            wr_adr <= {ADR_SZ{1'b0}};
+        end    
+        else if (wr_en) begin
+            if (wr_adr == POOL_DEPTH_SUB_1[ADR_SZ-1:0]) begin
+                wr_c <= ~wr_c;
+                wr_adr <= {ADR_SZ{1'b0}};
+            end
+            else begin
+                wr_adr <= wr_adr + 1'b1;
+            end
+        end    
+    end  
+  end
+endgenerate
 
     always @(posedge clk) begin
         if (rst) begin
@@ -99,7 +121,7 @@ module vlib_id_pool
             end
         end    
     end
-    
+
     //--------- write to and read from the flop array
     always @(posedge clk) begin
         for(int ii=0; ii<POOL_DEPTH; ii++) begin
