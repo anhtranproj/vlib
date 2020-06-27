@@ -66,7 +66,7 @@ module vlib_req_rsp_reorder_adpt
     input                                   in_rsp_srdy,
     output logic                            in_rsp_drdy,
     input [RSP_INFO_WD-1:0]                 in_rsp_info,
-    input [REQ_ID_WD]                       in_rsp_reqid
+    input [REQ_ID_WD-1:0]                   in_rsp_reqid
     );
     
     //================== BODY ========================
@@ -113,7 +113,7 @@ module vlib_req_rsp_reorder_adpt
     logic [REQ_ID_WD-1:0]            out_req_reqid_tmp;
     
     assign out_req_srdy_tmp = reqid_assigned;
-    assign in_req_drdy = out_req_drdy_tmp & ~reorder_buf_full
+    assign in_req_drdy = out_req_drdy_tmp & ~reorder_buf_full;
     
     assign out_req_info_tmp = in_req_info;
     assign out_req_reqid_tmp = reqid;
@@ -122,7 +122,7 @@ module vlib_req_rsp_reorder_adpt
     #(.WIDTH    (REQ_INFO_WD + REQ_ID_WD),
       .PPLN_OPT (OUT_REQ_PPLN_OPT) // 0: not pipelined; 1: sd_input; 2: sd_output; 3: sd_iofull
     )
-    output_ppln_ins
+    out_req_ppln_ins
     (
     .clk    (clk),  
     .rst    (rst),  
@@ -141,12 +141,12 @@ module vlib_req_rsp_reorder_adpt
     
     logic                               reorder_buf_wr_en;
     logic [REQ_ID_WD-1:0]               reorder_buf_wr_prt;
-    logic [`AXN_DBUF_ENTRY_DATA_WD-1:0] reorder_buf_wr_data;                              
+    logic [RSP_INFO_WD-1:0]             reorder_buf_wr_data;                              
     
     logic                               reorder_buf_rd_en;
     logic [REQ_ID_WD-1:0]               reorder_buf_rd_ptr; 
     logic                               reorder_buf_rd_out_vld;
-    logic [`AXN_DBUF_ENTRY_DATA_WD-1:0] reorder_buf_rd_out_data;
+    logic [RSP_INFO_WD-1:0]             reorder_buf_rd_out_data;
     
     always @* begin
         for(int ii=0; ii<REORDER_BUF_DEPTH; ii++) begin
@@ -185,7 +185,7 @@ module vlib_req_rsp_reorder_adpt
     assign reorder_buf_head_valid = entry_valid_arry[reorder_buf_rd_ptr];
     assign reorder_buf_rd_en = reorder_buf_head_valid & mem_out_dfcbuf_fc_n;
     
-    assign dbuf_req_rid_released = reorder_buf_rd_en;
+//     assign dbuf_req_rid_released = reorder_buf_rd_en;
     
     always @(posedge clk) begin
         if (rst) begin
@@ -206,6 +206,7 @@ module vlib_req_rsp_reorder_adpt
       .USE_BRAM     (REORDER_BUF_MEM_TYPE),   // 0: use flops; 1: use FPGA BRAM
       .RD_LAT       (REORDER_BUF_MEM_RD_LAT)  // total read latency. Must be >= 1 if using FPGA BRAM
     )
+    reorder_buf_mem_ins
     (
     .clk    (clk),
     .rst    (rst),
@@ -232,6 +233,7 @@ module vlib_req_rsp_reorder_adpt
       .THRESHOLD            (1),
       .ASSERT_FC_N_IF_POP   (1)
     )
+    dfc2sd_convert_ins
     (
     .clk    (clk),
     .rst    (rst),
@@ -250,7 +252,7 @@ module vlib_req_rsp_reorder_adpt
     #(.WIDTH    (RSP_INFO_WD),
       .PPLN_OPT (OUT_RSP_PPLN_OPT) // 0: not pipelined; 1: sd_input; 2: sd_output; 3: sd_iofull
     )
-    output_ppln_ins
+    out_rsp_ppln_ins
     (
     .clk    (clk),  
     .rst    (rst),  
